@@ -1,7 +1,8 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file='.env')
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
     PROJECT_NAME: str = 'myevents'
     PROJECT_VERSION: str = '0.0.1'
     DATABASE_URL: str
@@ -10,5 +11,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
     LOG_LEVEL: str = "INFO"
+
 
 settings = Settings()

@@ -9,12 +9,10 @@ from app.models.user import User
 from app.repositories import user_repo
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    session: Session = Depends(get_session),
-) -> User:
+def _resolve_user_from_token(token: str, session: Session) -> User:
     try:
         payload = decode_token(token)
     except JWTError:
@@ -37,6 +35,13 @@ def get_current_user(
     return user
 
 
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    session: Session = Depends(get_session),
+) -> User:
+    return _resolve_user_from_token(token, session)
+
+
 def require_roles(*roles):
     def dependency(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in roles:
@@ -47,3 +52,12 @@ def require_roles(*roles):
         return current_user
 
     return dependency
+
+
+def get_current_user_optional(
+    token: str | None = Depends(oauth2_scheme_optional),
+    session: Session = Depends(get_session),
+) -> User | None:
+    if token is None:
+        return None
+    return _resolve_user_from_token(token, session)

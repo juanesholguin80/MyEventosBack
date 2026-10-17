@@ -1,14 +1,12 @@
 from datetime import datetime, timedelta, timezone
 
-from passlib.context import CryptContext
 from sqlmodel import Session, select
 
+from app.core.security import hash_password
 from app.db.session import engine
 from app.models import Event, Registration, Speaker, User
 from app.models import Session as EventSession
 from app.models.enums import EventStatusEnum, RegistrationStatusEnum, RoleEnum
-
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 ADMIN_EMAIL = "admin@miseventos.com"
 
@@ -24,19 +22,19 @@ def seed() -> None:
 
         admin = User(
             email=ADMIN_EMAIL,
-            password_hash=pwd_context.hash("Admin123!"),
+            password_hash=hash_password("Admin123!"),
             full_name="Admin Principal",
             role=RoleEnum.ADMIN,
         )
         organizer = User(
             email="organizador@miseventos.com",
-            password_hash=pwd_context.hash("Organizador123!"),
+            password_hash=hash_password("Organizador123!"),
             full_name="Organizador Demo",
             role=RoleEnum.ORGANIZER,
         )
         assistant = User(
             email="asistente@miseventos.com",
-            password_hash=pwd_context.hash("Asistente123!"),
+            password_hash=hash_password("Asistente123!"),
             full_name="Asistente Demo",
             role=RoleEnum.ASSISTANT,
         )

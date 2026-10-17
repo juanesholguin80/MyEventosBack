@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
     LOG_LEVEL: str = "INFO"
+    TEST_DATABASE_URL: str | None = None
 
 
 settings = Settings()

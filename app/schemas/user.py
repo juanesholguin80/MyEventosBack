@@ -3,6 +3,16 @@ from app.models.enums import RoleEnum
 
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "email": "usuario@example.com",
+                "password": "ContraseñaSegura123",
+                "full_name": "Juan Pérez",
+            }
+        }
+    )
+
     email: EmailStr
     password: str
     full_name: str

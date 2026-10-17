@@ -13,24 +13,27 @@ from app.core.security import (
     hash_password,
 )
 from app.schemas.auth import TokenPair, UserLogin
+from app.core.exceptions import AppException, ConflictError
 
 
-class EmailAlreadyExistsError(Exception):
-    pass
+class EmailAlreadyExistsError(ConflictError):
+    code = "EMAIL_ALREADY_EXISTS"
 
 
-class InvalidCredentialsError(Exception):
-    pass
+class InvalidCredentialsError(AppException):
+    status_code = 401
+    code = "INVALID_CREDENTIALS"
 
 
-class InvalidTokenError(Exception):
-    pass
+class InvalidTokenError(AppException):
+    status_code = 401
+    code = "INVALID_TOKEN"
 
 
 def register(session: Session, data: UserCreate) -> User:
     existing_user = user_repo.get_by_email(session, data.email)
     if existing_user:
-        raise EmailAlreadyExistsError()
+        raise EmailAlreadyExistsError("El correo ya está registrado")
 
     password_hash = hash_password(data.password)
 
@@ -50,10 +53,10 @@ def register(session: Session, data: UserCreate) -> User:
 def login(session: Session, data: UserLogin) -> TokenPair:
     user = user_repo.get_by_email(session, data.email)
     if not user or not verify_password(data.password, user.password_hash):
-        raise InvalidCredentialsError()
+        raise InvalidCredentialsError("Credenciales inválidas")
 
     if not user.is_active:
-        raise InvalidCredentialsError()
+        raise InvalidCredentialsError("Credenciales inválidas")
 
     access_token = create_access_token(subject=str(user.id), role=user.role)
     refresh_token = create_refresh_token(subject=str(user.id))
@@ -65,13 +68,13 @@ def refresh(session: Session, refresh_token: str) -> str:
     try:
         payload = decode_token(refresh_token)
     except JWTError:
-        raise InvalidTokenError()
+        raise InvalidTokenError("Token inválido o expirado")
 
     if payload["type"] != "refresh":
-        raise InvalidTokenError()
+        raise InvalidTokenError("Token inválido o expirado")
 
     user = user_repo.get_by_id(session, int(payload["sub"]))
     if not user or not user.is_active:
-        raise InvalidTokenError()
+        raise InvalidTokenError("Token inválido o expirado")
 
     return create_access_token(subject=str(user.id), role=user.role)

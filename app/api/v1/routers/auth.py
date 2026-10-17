@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlmodel import Session
 
 from app.db.session import get_session
@@ -15,35 +15,29 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post(
-    "/register", response_model=UserRead, status_code=status.HTTP_201_CREATED
+    "/register",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar un nuevo usuario",
 )
 def register(data: UserCreate, session: Session = Depends(get_session)):
-    try:
-        user = auth_service.register(session, data)
-    except auth_service.EmailAlreadyExistsError:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail="El email ya está registrado"
-        )
-    return user
+    return auth_service.register(session, data)
 
 
-@router.post("/login", response_model=TokenPair)
+@router.post(
+    "/login",
+    response_model=TokenPair,
+    summary="Iniciar sesión",
+)
 def login(data: UserLogin, session: Session = Depends(get_session)):
-    try:
-        return auth_service.login(session, data)
-    except auth_service.InvalidCredentialsError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuario o contraseña incorrecto",
-        )
+    return auth_service.login(session, data)
 
 
-@router.post("/refresh", response_model=AccessTokenResponse)
+@router.post(
+    "/refresh",
+    response_model=AccessTokenResponse,
+    summary="Renovar el access token",
+)
 def refresh(data: TokenRefreshRequest, session: Session = Depends(get_session)):
-    try:
-        access_token = auth_service.refresh(session, data.refresh_token)
-    except auth_service.InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalido"
-        )
+    access_token = auth_service.refresh(session, data.refresh_token)
     return AccessTokenResponse(access_token=access_token)

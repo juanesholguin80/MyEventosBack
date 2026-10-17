@@ -8,14 +8,15 @@ from app.schemas.speaker import (
     SpeakerRead,
     SpeakerListResponse,
 )
+from app.core.exceptions import NotFoundError, ConflictError
 
 
-class SpeakerNotFoundError(Exception):
-    pass
+class SpeakerNotFoundError(NotFoundError):
+    code = "SPEAKER_NOT_FOUND"
 
 
-class SpeakerInUseError(Exception):
-    pass
+class SpeakerInUseError(ConflictError):
+    code = "SPEAKER_IN_USE"
 
 
 def create_speaker(session: Session, data: SpeakerCreate) -> Speaker:
@@ -34,7 +35,7 @@ def create_speaker(session: Session, data: SpeakerCreate) -> Speaker:
 def get_speaker(session: Session, speaker_id: int) -> Speaker:
     speaker = speaker_repo.get_by_id(session, speaker_id)
     if not speaker:
-        raise SpeakerNotFoundError()
+        raise SpeakerNotFoundError("Ponente no encontrado")
 
     return speaker
 
@@ -53,7 +54,7 @@ def delete_speaker(session: Session, speaker_id: int) -> None:
     speaker = get_speaker(session, speaker_id)
 
     if session_repo.count_by_speaker(session, speaker_id) > 0:
-        raise SpeakerInUseError()
+        raise SpeakerInUseError("El ponente tiene sesiones asociadas")
 
     speaker_repo.delete(session, speaker)
     session.commit()

@@ -8,22 +8,24 @@ from app.models.user import User
 from app.repositories import registration_repo
 from app.schemas.registration import MyRegistrationsResponse, RegistrationWithEventRead
 from app.services.event_service import EventNotFoundError
+from app.core.exceptions import ForbiddenError, ConflictError, DomainValidationError, NotFoundError
 
 
-class EventNotPublishedError(Exception):
-    pass
+class EventNotPublishedError(ForbiddenError):
+    code = "EVENT_NOT_PUBLISHED"
 
 
-class AlreadyRegisteredError(Exception):
-    pass
+class AlreadyRegisteredError(ConflictError):
+    code = "ALREADY_REGISTERED"
 
 
-class EventFullError(Exception):
-    pass
+class EventFullError(DomainValidationError):
+    status_code = 400
+    code = "EVENT_FULL"
 
 
-class RegistrationNotFoundError(Exception):
-    pass
+class RegistrationNotFoundError(NotFoundError):
+    code = "REGISTRATION_NOT_FOUND"
 
 
 def register_to_event(
@@ -31,20 +33,20 @@ def register_to_event(
 ) -> Registration:
     event = registration_repo.lock_event_for_update(session, event_id)
     if not event:
-        raise EventNotFoundError()
+        raise EventNotFoundError("Evento no encontrado")
 
     if event.status != EventStatusEnum.PUBLISHED:
-        raise EventNotPublishedError()
+        raise EventNotPublishedError("El evento no está publicado")
 
     existing = registration_repo.get_by_user_and_event(
         session, current_user.id, event_id
     )
     if existing and existing.status == RegistrationStatusEnum.CONFIRMED:
-        raise AlreadyRegisteredError()
+        raise AlreadyRegisteredError("Ya estás registrado en este evento")
 
     confirmed_count = registration_repo.count_confirmed_by_event(session, event_id)
     if confirmed_count >= event.capacity:
-        raise EventFullError()
+        raise EventFullError("No hay cupo disponible")
 
     if existing:
         updated = registration_repo.update(
@@ -73,7 +75,7 @@ def cancel_registration(session: Session, event_id: int, current_user: User) -> 
         session, current_user.id, event_id
     )
     if not registration or registration.status == RegistrationStatusEnum.CANCELLED:
-        raise RegistrationNotFoundError()
+        raise RegistrationNotFoundError("No estabas registrado en este evento")
 
     registration_repo.update(
         session, registration, {"status": RegistrationStatusEnum.CANCELLED}

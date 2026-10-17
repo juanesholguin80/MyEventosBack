@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
 from app.db.session import get_session
@@ -17,12 +17,22 @@ router = APIRouter(
 profile_router = APIRouter(tags=["users"])
 
 
-@profile_router.get("/me", response_model=UserRead, status_code=status.HTTP_200_OK)
+@profile_router.get(
+    "/me",
+    response_model=UserRead,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener mi propio perfil",
+)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-@router.get("/users", response_model=UserListResponse, status_code=status.HTTP_200_OK)
+@router.get(
+    "/users",
+    response_model=UserListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Listar usuarios (admin)",
+)
 def get_users(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
@@ -32,22 +42,23 @@ def get_users(
 
 
 @router.get(
-    "/users/{user_id}", response_model=UserRead, status_code=status.HTTP_200_OK
+    "/users/{user_id}",
+    response_model=UserRead,
+    status_code=status.HTTP_200_OK,
+    summary="Obtener el detalle de un usuario (admin)",
 )
 def get_user(
     user_id: int,
     session: Session = Depends(get_session),
 ):
-    try:
-        return user_service.admin_get_user(session, user_id)
-    except user_service.UserNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado"
-        )
+    return user_service.admin_get_user(session, user_id)
 
 
 @router.patch(
-    "/users/{user_id}", response_model=UserRead, status_code=status.HTTP_200_OK
+    "/users/{user_id}",
+    response_model=UserRead,
+    status_code=status.HTTP_200_OK,
+    summary="Actualizar rol o estado de un usuario (admin)",
 )
 def update_user(
     user_id: int,
@@ -55,14 +66,4 @@ def update_user(
     session: Session = Depends(get_session),
     current_user: User = Depends(require_roles(RoleEnum.ADMIN)),
 ):
-    try:
-        return user_service.admin_update_user(session, user_id, data, current_user)
-    except user_service.UserNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado"
-        )
-    except user_service.CannotModifySelfError:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No puedes modificar tu propio usuario desde este endpoint",
-        )
+    return user_service.admin_update_user(session, user_id, data, current_user)

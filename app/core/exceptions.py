@@ -15,14 +15,14 @@ class NotFoundError(AppException):
 
 class ConflictError(AppException):
     status_code = 409
-    code = "ConflictError"
+    code = "CONFLICT"
 
 
 class ForbiddenError(AppException):
     status_code = 403
-    code = "ForbiddenError"
+    code = "FORBIDDEN"
 
 
 class DomainValidationError(AppException):
     status_code = 422
-    code = "DomainValidationError"
+    code = "VALIDATION_ERROR"

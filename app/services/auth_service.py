@@ -52,6 +52,9 @@ def login(session: Session, data: UserLogin) -> TokenPair:
     if not user or not verify_password(data.password, user.password_hash):
         raise InvalidCredentialsError()
 
+    if not user.is_active:
+        raise InvalidCredentialsError()
+
     access_token = create_access_token(subject=str(user.id), role=user.role)
     refresh_token = create_refresh_token(subject=str(user.id))
 

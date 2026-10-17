@@ -15,3 +15,15 @@ class UserRead(BaseModel):
     full_name: str
     role: RoleEnum
     is_active: bool
+
+
+class UserAdminUpdate(BaseModel):
+    role: RoleEnum | None = None
+    is_active: bool | None = None
+
+
+class UserListResponse(BaseModel):
+    items: list[UserRead]
+    total: int
+    page: int
+    page_size: int

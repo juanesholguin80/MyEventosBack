@@ -107,6 +107,23 @@ poetry run pytest --cov=app --cov-report=html
 
 Estado actual: 143 tests (50 unitarios + 93 de integración), **99% de cobertura de línea** sobre `app/` (1042 statements, 2 sin cubrir — el cuerpo de `app/db/session.py::get_session()`, la dependencia real de FastAPI que abre una sesión por request en producción; los tests la sustituyen con `dependency_overrides` para compartir una única transacción de test, así que esa función nunca se invoca directamente desde la suite. Sí se ejerce al correr la app real con `docker-compose up`).
 
+## Linting y pre-commit
+
+El proyecto usa `flake8` (configuración en `.flake8`, excluye `.venv`/`alembic`) como único linter.
+
+```bash
+poetry run flake8 app/ scripts/ tests/
+```
+
+Hay un hook de **pre-commit** configurado (`.pre-commit-config.yaml`) que corre `flake8` automáticamente antes de cada `git commit`, así que un commit con errores de lint no se puede crear. Para activarlo en un clon nuevo del repo:
+
+```bash
+poetry install
+poetry run pre-commit install
+```
+
+Esto instala el hook en `.git/hooks/pre-commit`. No es necesario volver a instalarlo salvo que se clone el repo de nuevo (es un paso de setup local, no algo versionado).
+
 ## Documentación de la API
 
 Con el servidor corriendo:
@@ -124,6 +141,7 @@ Copia `.env.example` a `.env` y ajusta según el entorno. Todas están documenta
 | Variable | Usada por | Descripción |
 |---|---|---|
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | servicio `db` (docker-compose) | Credenciales con las que Postgres se inicializa en el contenedor de desarrollo. |
+| `TEST_POSTGRES_USER` / `TEST_POSTGRES_PASSWORD` / `TEST_POSTGRES_DB` | servicio `db_test` (docker-compose) | Análogas a las de arriba, pero para inicializar el contenedor de Postgres de test. |
 | `DATABASE_URL` | `app/core/config.py` → `app/db/session.py` | Cadena de conexión SQLAlchemy a Postgres. **El host cambia según dónde corras el backend:** `db` si corre dentro de `docker-compose` (resuelve por nombre de servicio en la red interna), `localhost` si corre en el host (Poetry, `alembic`, `scripts/seed.py`). |
 | `JWT_SECRET_KEY` | `app/core/security.py` | Secreto para firmar los JWT. Genera uno real con `openssl rand -hex 32` fuera de desarrollo local. |
 | `JWT_ALGORITHM` | `app/core/security.py` | Algoritmo de firma (`HS256`, simétrico). |
